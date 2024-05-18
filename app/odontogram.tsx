@@ -9,7 +9,7 @@ interface ColorableImageProps {
 const Odontogram: React.FC<ColorableImageProps> = ({ imagePath }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isPainting, setIsPainting] = useState(false);
-  const [prevPos, setPrevPos] = useState<{ x: number; y: number } | null>(null);
+  const [currentPosition, setCurrentPosition] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -34,9 +34,9 @@ const Odontogram: React.FC<ColorableImageProps> = ({ imagePath }) => {
   const startPaint = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const { offsetX, offsetY } = event.nativeEvent;
     const imageData = getPixelData(offsetX, offsetY);
-    if (isWhitePixel(imageData)) {
+    if (isTooth(imageData)) {
       setIsPainting(true);
-      setPrevPos({ x: offsetX, y: offsetY });
+      setCurrentPosition({ x: offsetX, y: offsetY });
     }
   };
 
@@ -45,19 +45,20 @@ const Odontogram: React.FC<ColorableImageProps> = ({ imagePath }) => {
 
     const { offsetX, offsetY } = event.nativeEvent;
     const imageData = getPixelData(offsetX, offsetY);
-    if (isWhitePixel(imageData)) {
-      if (prevPos) {
+    if (isTooth(imageData)) {
+      if (currentPosition) {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const context = canvas.getContext('2d');
         if (!context) return;
 
-        context.strokeStyle = 'black';
-        context.lineWidth = 5;
+        context.strokeStyle = 'red';
+        context.lineWidth = 2;
         context.lineJoin = 'round';
         context.lineCap = 'round';
+
         context.beginPath();
-        context.moveTo(prevPos.x, prevPos.y);
+        context.moveTo(currentPosition.x, currentPosition.y);
         context.lineTo(offsetX, offsetY);
         context.closePath();
         context.stroke();
@@ -65,12 +66,12 @@ const Odontogram: React.FC<ColorableImageProps> = ({ imagePath }) => {
         
       }
     }
-    setPrevPos({ x: offsetX, y: offsetY });
+    setCurrentPosition({ x: offsetX, y: offsetY });
   };
 
   const endPaint = () => {
     setIsPainting(false);
-    setPrevPos(null);
+    setCurrentPosition(null);
   };
 
   const getPixelData = (x: number, y: number): ImageData => {
@@ -79,10 +80,10 @@ const Odontogram: React.FC<ColorableImageProps> = ({ imagePath }) => {
     return context?.getImageData(x, y, 1, 1) || new ImageData(1, 1);
   };
 
-  const isWhitePixel = (imageData: ImageData): boolean => {
+  const isTooth = (imageData: ImageData): boolean => {
     const [red, green, blue, alpha] = imageData.data as any;
     console.log(red, green, blue, alpha);
-    return red >= 250 && green >= 250 && blue >= 250 && alpha === 255;
+    return !((red == 255 && green == 255 && blue == 255) || (red == 0 && green == 0 && blue == 0))
   };
 
   return (
